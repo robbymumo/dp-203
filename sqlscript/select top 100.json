@@ -3,7 +3,7 @@
 	"properties": {
 		"description": "Selects top 100 rows in products table",
 		"content": {
-			"query": "-- This is auto-generated code\nSELECT\n    TOP 100 *\nFROM\n    OPENROWSET(\n        BULK 'https://datalakez5na780.dfs.core.windows.net/files/product_data/products.csv',\n        FORMAT = 'CSV',\n        PARSER_VERSION = '2.0'\n    ) AS [result]\n",
+			"query": "-- This is auto-generated code\nSELECT Category, \n    COUNT (*) as ProductCount\n    -- TOP 100 *\nFROM\n    OPENROWSET(\n        BULK 'https://datalakez5na780.dfs.core.windows.net/files/product_data/products.csv',\n        FORMAT = 'CSV',\n        PARSER_VERSION = '2.0',\n        HEADER_ROW = TRUE\n    ) AS [result]\nGROUP BY Category;",
 			"metadata": {
 				"language": "sql"
 			},
