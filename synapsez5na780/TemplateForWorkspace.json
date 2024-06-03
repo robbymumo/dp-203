@@ -109,6 +109,48 @@
 			]
 		},
 		{
+			"name": "[concat(parameters('workspaceName'), '/Pipeline 1')]",
+			"type": "Microsoft.Synapse/workspaces/pipelines",
+			"apiVersion": "2019-06-01-preview",
+			"properties": {
+				"activities": [
+					{
+						"name": "transformed_data",
+						"type": "SynapseNotebook",
+						"dependsOn": [],
+						"policy": {
+							"timeout": "0.12:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"notebook": {
+								"referenceName": "transformed_data",
+								"type": "NotebookReference"
+							},
+							"snapshot": true,
+							"conf": {
+								"spark.dynamicAllocation.enabled": null,
+								"spark.dynamicAllocation.minExecutors": null,
+								"spark.dynamicAllocation.maxExecutors": null
+							},
+							"numExecutors": null
+						}
+					}
+				],
+				"policy": {
+					"elapsedTimeMetric": {}
+				},
+				"annotations": []
+			},
+			"dependsOn": [
+				"[concat(variables('workspaceId'), '/notebooks/transformed_data')]"
+			]
+		},
+		{
 			"name": "[concat(parameters('workspaceName'), '/DestinationDataset_qyc')]",
 			"type": "Microsoft.Synapse/workspaces/datasets",
 			"apiVersion": "2019-06-01-preview",
@@ -316,7 +358,7 @@
 						"spark.dynamicAllocation.enabled": "false",
 						"spark.dynamicAllocation.minExecutors": "2",
 						"spark.dynamicAllocation.maxExecutors": "2",
-						"spark.autotune.trackingId": "aca7d5f9-02f4-4979-af26-abfa0eaf71da"
+						"spark.autotune.trackingId": "0f8f0cb6-8412-4c43-a180-d0dc15040677"
 					}
 				},
 				"metadata": {
@@ -366,7 +408,7 @@
 							"from pyspark.sql.functions import *"
 						],
 						"outputs": [],
-						"execution_count": 20
+						"execution_count": 38
 					},
 					{
 						"cell_type": "code",
@@ -378,14 +420,14 @@
 						},
 						"source": [
 							"%%pyspark\r\n",
-							"df = spark.read.load('abfss://files@datalakez5na780.dfs.core.windows.net/sales_data/Sales Data.csv', format='csv',\r\n",
-							"## If header exists uncomment line below\r\n",
-							"header=True\r\n",
-							")\r\n",
-							"display(df.limit(10))"
+							"df = spark.read.option(\"dateFormat\", \"MM/dd/yy HH:mm\").load('abfss://files@datalakez5na780.dfs.core.windows.net/sales_data/Sales Data.csv', format='csv', header=True)\r\n",
+							"\r\n",
+							"display(df.limit(10))\r\n",
+							"\r\n",
+							""
 						],
 						"outputs": [],
-						"execution_count": 21
+						"execution_count": 39
 					},
 					{
 						"cell_type": "code",
@@ -411,7 +453,7 @@
 							""
 						],
 						"outputs": [],
-						"execution_count": 22
+						"execution_count": 40
 					},
 					{
 						"cell_type": "code",
@@ -427,17 +469,20 @@
 							}
 						},
 						"source": [
-							"# Convert OrderDate to a date type and add a new Year column\r\n",
-							"# df = df.withColumn('OrderDate', to_date(col('OrderDate'), 'MM/dd/yyyy'))  # Adjust date format as needed\r\n",
-							"df = df.withColumn('Year', year(col('Order Date')))\r\n",
+							"# Rename columns\r\n",
+							"df = df.withColumnRenamed(\"Quantity ordered\", \"Quantity_ordered\") \\\r\n",
+							"        .withColumnRenamed(\"Order ID\", \"Order_ID\") \\\r\n",
+							"       .withColumnRenamed(\"Price Each\", \"Price_Each\") \\\r\n",
+							"       .withColumnRenamed(\"Order Date\", \"Order_Date\")\\\r\n",
+							"       .withColumnRenamed(\"Purchase Address\", \"Purchase_Address\")\r\n",
 							"\r\n",
-							"# Save the DataFrame as a Parquet file back to Azure Data Lake Storage\r\n",
-							"df.write.mode('overwrite').parquet('abfss://files@datalakez5na780.dfs.core.windows.net/sales_data/Sales_Data_with_Year.parquet')\r\n",
+							"# Save DataFrame as Parquet, overwriting existing data\r\n",
+							"df.write.mode(\"overwrite\").parquet(\"abfss://files@datalakez5na780.dfs.core.windows.net/user/trusted-service-user/new_sales.parquet\")\r\n",
 							"\r\n",
-							"print(\"DataFrame has been saved as a Parquet file with the new 'Year' column.\")"
+							""
 						],
 						"outputs": [],
-						"execution_count": 23
+						"execution_count": 45
 					},
 					{
 						"cell_type": "code",
